@@ -33,9 +33,13 @@ Before commit:
 
 ## Push and publication
 
-Push requires the gateway's required permission and exact-operation approval. Use the configured remote/upstream explicitly. Never force-push unless a separately defined destructive contract and exact approval exist.
+Push requires the gateway's required permission and exact-operation approval. Use a configured remote explicitly. A configured upstream may be used as a remote-selection hint, but it is not a prerequisite for publication. When the execution environment provides bounded generic push, publish only the current attached local branch to the exact same-name remote branch. Do not use arbitrary refspecs, change the destination branch name, set upstream implicitly, or force-push unless a separately defined destructive contract and exact approval exist.
 
-After publication, record commit/remote/branch evidence in the tracker and reevaluate closure.
+Release tags are a separate publication action. When the execution environment supports bounded release tagging, use only SemVer release tags (optionally prefixed with `v`), create annotated tags bound to the exact approved commit/HEAD, and require exact-operation approval. Never overwrite, retarget, delete, or force-push an existing release tag as part of the normal workflow.
+
+These rules describe portable workflow policy only. The MCP host or local execution gateway remains authoritative for capability availability, remote trust, exact-HEAD binding, credentials, approvals, and other runtime safety checks.
+
+After publication, record commit/remote/branch and release-tag evidence, when applicable, in the tracker and reevaluate closure.
 
 ## Forbidden
 
