@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../.agents/queue/schema/queue-item.schema.json",
+  "id": "Q0001",
+  "title": "Synchronize API schema and runtime validation",
+  "status": "TODO",
+  "priority": 20,
+  "workset": "TCK001",
+  "task": "TASK-002",
+  "objective": "Published arguments, defaults, bounds, and unknown-key behavior match runtime validation for one endpoint.",
+  "dependencies": [],
+  "requiredCapabilities": [
+    "typescript"
+  ],
+  "exclusiveScopes": [
+    "contract:api-schema"
+  ],
+  "acceptanceCriteria": [
+    "AC-02",
+    "AC-03"
+  ],
+  "relevantRules": [
+    ".claude/rules/testing-dod.md"
+  ],
+  "primaryFiles": [
+    "src/api/example/schema.ts",
+    "src/api/example/runtime.ts",
+    "tests/example-endpoint.test.ts"
+  ],
+  "doNotTouch": [
+    "src/auth/"
+  ],
+  "requiredValidation": [
+    "npm test -- example-endpoint",
+    "manual published-schema/runtime fixture parity check"
+  ],
+  "createdAt": "2026-09-18T10:00:00Z",
+  "updatedAt": "2026-09-18T10:00:00Z"
+}

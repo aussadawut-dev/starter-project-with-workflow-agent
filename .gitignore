@@ -1,0 +1,14 @@
+# Agent runtime coordination state
+.agent-runtime/
+
+# Python local artifacts
+__pycache__/
+*.pyc
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS metadata
+.DS_Store
