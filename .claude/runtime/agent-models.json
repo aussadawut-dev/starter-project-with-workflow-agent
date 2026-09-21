@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "claude": {
+    "intakeEvaluator": {
+      "profile": "sonnet-max",
+      "file": ".claude/agents/request-evaluator.md",
+      "reasoningEffort": "max",
+      "output": "controller-level-only"
+    },
+    "controllerModelsByEffort": {
+      "light": "claude-sonnet-4-6",
+      "standard": "claude-sonnet-4-6",
+      "high": "claude-sonnet-4-6",
+      "max": "claude-sonnet-4-6"
+    },
+    "reasoningEfforts": {
+      "light": "low",
+      "standard": "medium",
+      "high": "high",
+      "max": "max"
+    },
+    "modelEscalation": {
+      "model": "claude-sonnet-4-6",
+      "reasoningEfforts": {
+        "high": "high",
+        "max": "max"
+      }
+    }
+  }
+}
