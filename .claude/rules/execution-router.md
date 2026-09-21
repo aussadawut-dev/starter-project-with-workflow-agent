@@ -3,22 +3,27 @@
 Every agent uses this routing overlay before reading broadly or changing files.
 
 ```text
-ROUTE -> PREPARE -> EXECUTE -> RECOVER? -> VERIFY -> FINALIZE
+INTAKE -> CONTROLLER START -> ROUTE -> PREPARE -> DISPATCH GATE -> EXECUTE -> RECOVER? -> VERIFY -> FINALIZE
 
-ROUTE     = CLASSIFY + LOCATE + effort/review/parallelism choice
-PREPARE   = DECIDE + PLAN only when needed + QUEUE
-EXECUTE   = CLAIM + bounded implementation
-RECOVER   = classify failure before retry/escalation
-VERIFY    = targeted evidence + risk-triggered review
-FINALIZE  = complete-once + SYNC + PUBLISH/CLOSE when authorized
+INTAKE           = fixed Request Evaluator chooses only Controller logical level + reason
+CONTROLLER START = validate that selection and start a fresh Controller with explicit supported model/effort
+ROUTE            = Controller CLASSIFY + LOCATE + downstream effort/review/parallelism choice
+PREPARE          = Controller DECIDE + PLAN only when needed + QUEUE
+DISPATCH         = fresh topology/role read + explicit runtime parameter validation
+EXECUTE          = CLAIM + bounded implementation
+RECOVER          = classify failure before retry/escalation
+VERIFY           = targeted evidence + risk-triggered review
+FINALIZE         = complete-once + SYNC + PUBLISH/CLOSE when authorized
 ```
 
-The grouped Lean phases reduce handoff/polling overhead; they do not remove the detailed lifecycle below. Tracking, queue, gateway, Git, approval and validation rules remain authoritative. `scripts/agent_workflow.py` may deterministically route, evaluate temporary escalation, validate packets/handoffs, fingerprint evidence, reconcile events and finalize a claimed item, but `agent_queue_core.QueueStore` remains the ownership source of truth.
+The intake/startup pair is bootstrap, not a delegated work phase. The Request Evaluator ends after emitting the validated Controller selection; only the Controller may enter ROUTE and make downstream orchestration decisions. The grouped Lean phases reduce handoff/polling overhead; they do not remove the detailed lifecycle below. Tracking, queue, gateway, Git, approval and validation rules remain authoritative. `scripts/agent_workflow.py` may validate intake/startup, deterministically route, evaluate temporary escalation, validate packets/handoffs, fingerprint evidence, reconcile events and finalize a claimed item, but `agent_queue_core.QueueStore` remains the ownership source of truth.
 
 ## Lean helper discipline
 
 See the [Lean runtime guide](../../docs/runtime/lean-agent-workflow.md) for CLI contracts, failure recovery and rollback.
 
+- Before ROUTE, use the fixed intake/startup gates when launching a new Controller. The intake evaluator may choose only `controllerLevel` + reason; it must not choose workers, Planner/Reviewer roles, parallelism, queue actions, or execution steps.
+- Pass the validated `controllerLevel` into ROUTE. ROUTE echoes that Controller level and may choose only downstream topology; it never reconfigures the Controller.
 - Use deterministic route/packet validation when work is being delegated; do not spend a Planner turn reproducing a decision table the tool can resolve.
 - Use the route's provider-agnostic effort policy; provider/model mapping is configuration and never queue authority.
 - A context budget is an economy limit, never an authorization boundary. Expand it only when evidence shows missing context and keep the expansion bounded.
@@ -29,6 +34,8 @@ See the [Lean runtime guide](../../docs/runtime/lean-agent-workflow.md) for CLI 
 - The legacy `agent_queue.py` path remains valid and is the rollback path; Lean tooling never grants commit, push, release or deployment authority.
 
 ## CLASSIFY
+
+CLASSIFY is Controller-owned. Intake selection has already ended before this point; the Request Evaluator must not pre-classify the work or pre-select downstream roles.
 
 | Class | Criteria | Route |
 |---|---|---|
@@ -114,7 +121,7 @@ The Controller converts dependency-safe tracker tasks into `.agents/queue/items/
 - Priority chooses among ready items but never overrides dependencies, capabilities, or exclusive scopes.
 - Use coarse explicit conflict keys such as `contract:tool-schema`, `runtime:process-policy`, or `file:scripts/agent_queue.py`.
 - Do not queue two items that intentionally edit the same coherent change unless one depends on the other.
-- Do not materialize six Workers because six items exist. Use the adaptive recommendation: normally 1/2/3/4 Workers, with 5-6 reserved for explicit burst mode.
+- Do not materialize six Workers because six items exist. Use the adaptive recommendation: normally 1/2/3/4 Workers, with 5-6 reserved for explicit burst mode. Clamp dispatch to actual available runtime slots, including other active roles; the recommendation never creates capacity.
 
 ## CLAIM
 
@@ -130,12 +137,19 @@ A Worker must claim before editing. Claim operations are atomic and lease based.
 
 See [queue claim](queue-claim.md).
 
+## DISPATCH GATE
+
+Before the assignment tool call, give the user the task/role, concrete requested model and effort, and a task-specific reason for each selection as required by [the assignment rationale](agent-topology.md#required-user-visible-assignment-rationale). This applies to every assignment, including follow-ups with unchanged settings. Record the rationale in session-local dispatch evidence.
+
+Before every spawn or follow-up, including correction, reassignment, escalation and resume, freshly read [agent topology](agent-topology.md) in full and the selected role file. Run `prepare-dispatch`, read its sources, then `validate-dispatch` with the exact intended tool parameters. This is required and overrides cached-context/read-once advice. Unknown capability, stale receipt, unavailable model/effort, or mismatched existing agent means no dispatch. Prompt-only role labels do not configure a runtime. See topology for provider mapping, follow-up reuse and stop/resume rules.
+
 ## EXECUTE
 
 - Work only inside the claimed scope.
 - Preserve unrelated user changes.
 - Implement the smallest dependency-safe slice.
 - Start at the route's baseline effort; do not preemptively select max effort.
+- Apply topology's economical model selection before dispatch: mechanical work uses the simple tier, ordinary implementation/review the standard tier, and high requires a concrete planning/specialist/escalation trigger. Lower reasoning on the strongest model does not satisfy economical model selection. Name the accountable owner, resolve the tier in runtime configuration and fail closed if unavailable. No role defaults to a frontier model; a stronger-model request separately requires evidence of a failed same-assignment attempt at the baseline ceiling. Minimize total context and delegation overhead.
 - Do not broaden scope merely because adjacent cleanup is convenient.
 - Do not recursively delegate/subagent unless a separate independent work item is queue-ready and ownership-safe.
 - When a needed change falls outside the Work Packet, stop that portion and ask the Controller to amend or create a queue item.
@@ -177,12 +191,13 @@ Use a validation waterfall:
 1. Worker runs only focused tests/checks required by its item plus checks triggered by the actual diff.
 2. Integration checkpoint runs combined targeted checks.
 3. Run the full suite/build once when the combined workset warrants it.
-4. Repeat a full suite only for observed flakiness/nondeterminism or explicit release-certification policy.
+4. Rerun required full-suite/build checks when subsequent code or other relevant input changes invalidate their evidence; also repeat for observed flakiness/nondeterminism or explicit release-certification policy. Do not repeat unchanged green checks without a reason.
 
 Review mode is risk based:
 
-- `SELF` for low-risk Small work.
-- `LEAD` for ordinary Medium/Large integration.
+- `NONE` for read-only work.
+- `SELF` for low-risk Small work or tracked Medium work with no risk flags when selected by the deterministic route.
+- `LEAD` for Medium work with meaningful risk flags or ordinary Large integration.
 - `LEAD_PLUS_SPECIALIST` only for the concrete specialist risks defined in agent-topology.
 
 Evidence must name what ran and its result. “Looks good” is not evidence. Keep queue completion evidence compact; detailed browser traces, investigation narratives, or long command logs belong in a referenced evidence artifact, not repeatedly inside every queue JSON.
