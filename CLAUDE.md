@@ -9,17 +9,20 @@ This file is the root governance entry point. Keep it concise. Detailed policy b
 Every request enters through the `execution-router` skill and follows:
 
 ```text
-CLASSIFY -> LOCATE -> DECIDE -> PLAN when needed -> QUEUE -> CLAIM -> EXECUTE -> RECOVER if needed -> VERIFY -> SYNC -> PUBLISH/CLOSE
+INTAKE -> CONTROLLER START -> CLASSIFY -> LOCATE -> DECIDE -> PLAN when needed -> QUEUE -> DISPATCH GATE -> CLAIM -> EXECUTE -> RECOVER if needed -> VERIFY -> SYNC -> PUBLISH/CLOSE
 ```
 
-Queue/claim extends the delivery lifecycle; it does not replace requirement tracking or review.
+Queue/claim extends the delivery lifecycle; it does not replace requirement tracking or review. Before every agent assignment, including follow-ups and resumed tasks, freshly read [agent topology](.claude/rules/agent-topology.md) and pass its mandatory dispatch gate. Cached context is not a substitute.
 
 ## Team topology
 
+Name one accountable work owner at intake. Token efficiency governs model, effort, context and delegation choices without weakening required checks. Follow the canonical topology for evidence-backed escalation and role-specific economical defaults.
+
+- **Request Evaluator (bootstrap)** — runs once before the Controller exists; chooses only the lowest sufficient Controller logical level and stops. Never plans, decomposes, dispatches, or executes work.
 - **Controller** — owns classification, queue, dependency ordering, ownership, dispatch, conflict resolution, integration decisions, and workset state. Default effort is light; it does not perform routine implementation or review.
 - **Planner (on demand)** — decomposes Large/Complex or unresolved work initially or replans after a failed checkpoint. Parallelism alone does not require a Planner turn.
-- **Lead Reviewer** — performs risk-based combined review. Ordinary work uses one Lead; specialist review is added only for the concrete high-risk boundary that needs it.
-- **Worker pool x N** — one Worker per independent executable queue item. Normal adaptive parallelism is 1/2/3/4 Workers; 5-6 is explicit burst mode only.
+- **Lead Reviewer** — performs risk-based combined review. The deterministic route selects self-review for low-risk work and one Lead for meaningful integration risk; specialist review is added only for the concrete high-risk boundary that needs it.
+- **Worker pool x N** — one Worker per independent executable queue item. Normal adaptive parallelism is 1/2/3/4 Workers; 5-6 is explicit burst mode only, subject to actual available runtime slots across all active roles.
 
 Roles use provider-agnostic logical effort `light -> standard -> high -> max`. A capability failure may temporarily raise one level for the affected item; environment/tool/authority failures do not. Escalation always resets after the item.
 
@@ -32,7 +35,7 @@ Full role policy: [agent topology](.claude/rules/agent-topology.md).
 - Medium/Large, multi-step, risky, security-sensitive, approval-sensitive, contract-changing, or cross-area work: locate/create tracking before implementation and dispatch executable tasks through the queue.
 - Load only the current role's context. Expand context only after a concrete missing-context signal and keep the expansion bounded.
 - Delegate with a bounded Work Packet, never with a conversation dump.
-- Before spawning, apply the runtime dispatch contract for [Codex](.claude/rules/agent-topology.md#codex-runtime-dispatch-contract) or [Claude](.claude/rules/agent-topology.md#claude-runtime-dispatch-contract): explicitly select the mapped model and supported effort controls; never silently inherit the Controller's model.
+- Before spawning, apply the [Claude runtime dispatch contract](.claude/rules/agent-topology.md#claude-runtime-dispatch-contract): explicitly select the mapped model from [agent-models.json](.claude/runtime/agent-models.json) and supported effort controls; never silently inherit the Controller's model.
 - Use the lowest logical effort likely to finish safely; do not select max effort preemptively.
 - On failure, classify `environment|tooling|authority|missing-context|reasoning|implementation|planning` before retry/escalation.
 - Provider/model mappings are runtime configuration and must not be stored as durable queue authority.
@@ -105,5 +108,7 @@ None yet. When this project needs domain-specific engineering rules (e.g. API co
 ## Index
 
 Rules: [execution router](.claude/rules/execution-router.md) · [agent topology](.claude/rules/agent-topology.md) · [queue claim](.claude/rules/queue-claim.md) · [tracking](.claude/rules/tracking.md) · [Git workflow](.claude/rules/git-workflow.md) · [testing and DoD](.claude/rules/testing-dod.md)
+
+Agents: [request-evaluator](.claude/agents/request-evaluator.md) · [worker](.claude/agents/worker.md) · [simple-worker](.claude/agents/simple-worker.md) · [lead-reviewer](.claude/agents/lead-reviewer.md) · [planner](.claude/agents/planner.md) · [model config](.claude/runtime/agent-models.json)
 
 Skills: [execution router](.claude/skills/execution-router/SKILL.md) · [work tracking](.claude/skills/work-tracking/SKILL.md) · [queue claim](.claude/skills/queue-claim/SKILL.md) · [review workset](.claude/skills/review-workset/SKILL.md)
