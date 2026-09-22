@@ -114,17 +114,17 @@ Active exclusive scopes: None (docs:agent-governance released with Q0002 complet
 Required review/gates: LEAD - completed; 1 blocking finding (BLK-01) + 2 non-blocking (NB-01, NB-02), all fixed via Q0002 and self-verified (mechanical, low-risk correction - SELF tier per agent-topology.md review fan-out)
 Last validation: 2026-09-22 - validate_agent_governance.py PASS, unittest 54/54 PASS, agent_queue.py validate PASS (post-fix rerun)
 Budget: Not set by intake (no Requester/session budget ceiling was given for this task); tracked qualitatively only
-Publication: Not requested - stays at REVIEW; awaiting user authorization to commit
+Publication: DONE - commit f172635 on main, pushed to origin (6141e67..f172635), tag v1.1.0 (annotated, MINOR bump from v1.0.0) pushed to origin
 ```
 
 ## Handoff and completion
 
 ```text
-Overall status: REVIEW
-Completed: Implementation (Q0001), Lead review + fix of all findings (Q0002), full validation suite green, tracker/IMP synced
-Remaining: Nothing implementation-side; commit/push is a separate authority not yet requested
+Overall status: DONE
+Completed: Implementation (Q0001), Lead review + fix of all findings (Q0002), full validation suite green, tracker/IMP synced, committed + pushed + tagged
+Remaining: None. (Note: an unrelated, separately-requested caveman-compress pass over 32 governance files landed in the same commit/tag - see commit f172635 body; not tracked as its own queue item, Small/reversible/no-policy-change exception)
 Blocked: None
 Not run: None - all 3 required validations ran twice (pre- and post-fix), both green
-Publication: Not requested - ends at REVIEW pending explicit commit authorization from the user
-Rollback/operations: Pure doc/config change (no application code, no scripts/tests touched); revert via git if needed
+Publication: commit f172635, pushed to origin/main (6141e67..f172635), tag v1.1.0 pushed to origin
+Rollback/operations: Pure doc/config change (no application code, no scripts/tests touched); revert via git if needed (git revert f172635, git push --delete origin v1.1.0 + local tag delete if the tag itself must come back too)
 ```
