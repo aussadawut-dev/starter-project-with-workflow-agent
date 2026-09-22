@@ -1,10 +1,10 @@
 # Workflow Agent Starter Project
 
-This file is the root governance entry point. Keep it concise. Detailed policy belongs in `.claude/rules/`; executable procedures belong in `.claude/skills/` and `.claude/commands/`.
+Root governance entry point. Detailed policy in `.claude/rules/`; executable procedures in `.claude/skills/` and `.claude/commands/`.
 
 ## Shared agent source of truth
 
-`CLAUDE.md` and `.claude/` are canonical for every agent runtime. `AGENTS.md` and `.agents/skills/` are thin compatibility adapters only. Never maintain a second policy copy for another agent product.
+`CLAUDE.md` and `.claude/` canonical for every agent runtime. `AGENTS.md` and `.agents/skills/` thin compatibility adapters only. Never maintain a second policy copy.
 
 Every request enters through the `execution-router` skill and follows:
 
@@ -12,11 +12,11 @@ Every request enters through the `execution-router` skill and follows:
 INTAKE -> CONTROLLER START -> CLASSIFY -> LOCATE -> DECIDE -> PLAN when needed -> QUEUE -> DISPATCH GATE -> CLAIM -> EXECUTE -> RECOVER if needed -> VERIFY -> SYNC -> PUBLISH/CLOSE
 ```
 
-Queue/claim extends the delivery lifecycle; it does not replace requirement tracking or review. Before every agent assignment, including follow-ups and resumed tasks, freshly read [agent topology](.claude/rules/agent-topology.md) and pass its mandatory dispatch gate. Cached context is not a substitute.
+Queue/claim extends delivery lifecycle; does not replace requirement tracking or review. Before every agent assignment (including follow-ups and resumed tasks), read [agent topology](.claude/rules/agent-topology.md) and pass dispatch gate. Cached context is not sufficient.
 
 ## Team topology
 
-Name one accountable work owner at intake. Token efficiency governs model, effort, context and delegation choices without weakening required checks. Follow the canonical topology for evidence-backed escalation and role-specific economical defaults.
+Name accountable owner at intake. Token efficiency governs model, effort, context, delegation without weakening checks. Follow topology for evidence-backed escalation and role-specific economical defaults.
 
 - **Request Evaluator (bootstrap)** — runs once before the Controller exists; chooses only the lowest sufficient Controller logical level and stops. Never plans, decomposes, dispatches, or executes work.
 - **Controller** — owns classification, queue, dependency ordering, ownership, dispatch, conflict resolution, integration decisions, and workset state. Default effort is light; it does not perform routine implementation or review.
@@ -31,22 +31,22 @@ Full role policy: [agent topology](.claude/rules/agent-topology.md).
 ## Routing and context discipline
 
 - Read-only/status/explanation work: answer directly.
-- Small, localized, reversible work with no contract or dependency impact: execute directly and verify; no tracker or queue item is required.
-- Medium/Large, multi-step, risky, security-sensitive, approval-sensitive, contract-changing, or cross-area work: locate/create tracking before implementation and dispatch executable tasks through the queue.
-- Load only the current role's context. Expand context only after a concrete missing-context signal and keep the expansion bounded.
-- Delegate with a bounded Work Packet, never with a conversation dump.
-- Before spawning, apply the [Claude runtime dispatch contract](.claude/rules/agent-topology.md#claude-runtime-dispatch-contract): explicitly select the mapped model from [agent-models.json](.claude/runtime/agent-models.json) and supported effort controls; never silently inherit the Controller's model.
-- Use the lowest logical effort likely to finish safely; do not select max effort preemptively.
+- Small, localized, reversible work with no contract/dependency impact: execute directly and verify; no tracker or queue item needed.
+- Medium/Large, multi-step, risky, security-sensitive, approval-sensitive, contract-changing, or cross-area work: track before implementation, dispatch via queue.
+- Load only current role context. Expand only after missing-context signal; keep bounded.
+- Delegate with bounded Work Packet, never conversation dump.
+- Before spawning, apply [Claude runtime dispatch contract](.claude/rules/agent-topology.md#claude-runtime-dispatch-contract): explicitly select mapped model from [agent-models.json](.claude/runtime/agent-models.json) and supported effort controls; never silently inherit Controller model.
+- Use lowest logical effort likely to finish safely; do not select max preemptively.
 - On failure, classify `environment|tooling|authority|missing-context|reasoning|implementation|planning` before retry/escalation.
-- Provider/model mappings are runtime configuration and must not be stored as durable queue authority.
+- Provider/model mappings are runtime configuration, never durable queue authority.
 
 Full policy: [execution router](.claude/rules/execution-router.md).
 
 ## Queue and claim invariant
 
-Tracked queue definitions live in `.agents/queue/items/`. Runtime claim leases live in `.agent-runtime/claims/` and are intentionally ignored by Git.
+Queue definitions in `.agents/queue/items/`. Claim leases in `.agent-runtime/claims/`, intentionally ignored by Git.
 
-A Worker must atomically claim an item before editing its scope. At most one active claim may own an item, and overlapping exclusive scopes must not run concurrently. Claims use a lease and heartbeat; stale leases may be reclaimed only through the queue tool. Completion requires validation evidence before the item becomes `DONE`.
+Worker must atomically claim before editing. At most one active claim per item; overlapping exclusive scopes must not run concurrently. Claims use lease and heartbeat; stale leases reclaimed via queue tool. Completion requires validation evidence.
 
 Use:
 
@@ -72,19 +72,19 @@ For Medium/Large work:
 6. Claim, implement, validate, and synchronize each item immediately.
 7. Review the combined workset before publication or closure.
 
-The tracker is the durable execution record. The queue is the concurrency and ownership mechanism. Neither may silently override the other.
+Tracker is durable execution record. Queue is concurrency and ownership mechanism. Neither may silently override.
 
 Full policy: [tracking](.claude/rules/tracking.md).
 
 ## Git and publication safety
 
-Commit, push, merge, release, and deployment are separate actions. Perform only the actions explicitly authorized by the user or an approved runbook. Never work from detached HEAD. Never rewrite or discard user work to make a task easier.
+Commit, push, merge, release, deployment are separate actions. Perform only authorized actions. Never work from detached HEAD. Never rewrite or discard user work.
 
 Full policy: [Git workflow](.claude/rules/git-workflow.md).
 
 ## Definition of Done
 
-A workset is complete only when all acceptance criteria map to evidence, required targeted/integration checks pass, queue items and tracking are synchronized, required review has no unresolved blocking finding, documentation reflects the actual behavior, and any requested publication action succeeds. Otherwise report `REVIEW`, `BLOCKED`, or `PARTIAL` truthfully.
+Workset complete only when: all AC map to evidence, checks pass, queue/tracking synchronized, review has no blocking finding, documentation matches behavior, requested publication succeeds. Otherwise report `REVIEW`, `BLOCKED`, or `PARTIAL` truthfully.
 
 Full policy: [testing and DoD](.claude/rules/testing-dod.md).
 
@@ -99,11 +99,11 @@ Root CLAUDE.md
   -> source-level conventions and runtime evidence
 ```
 
-A lower layer may add detail but may not weaken workspace isolation, approval, security, data-integrity, queue ownership, or publication rules.
+Lower layers may add detail but not weaken workspace isolation, approval, security, data-integrity, queue ownership, or publication rules.
 
 ## Project-specific rules
 
-None yet. When this project needs domain-specific engineering rules (e.g. API contracts, data-integrity invariants), add them under `.claude/rules/` and link them from this index; keep them separate from the generic workflow-agent rules above.
+None yet. When domain-specific rules are needed (e.g. API contracts, data-integrity invariants), add under `.claude/rules/` and link here; keep separate from generic workflow-agent rules.
 
 ## Index
 

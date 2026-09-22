@@ -1,6 +1,6 @@
 # Execution Router
 
-Every agent uses this routing overlay before reading broadly or changing files.
+Every agent uses this routing overlay before reading broadly or making changes.
 
 ```text
 INTAKE -> CONTROLLER START -> ROUTE -> PREPARE -> DISPATCH GATE -> EXECUTE -> RECOVER? -> VERIFY -> FINALIZE
@@ -16,26 +16,26 @@ VERIFY           = targeted evidence + risk-triggered review
 FINALIZE         = complete-once + SYNC + PUBLISH/CLOSE when authorized
 ```
 
-The intake/startup pair is bootstrap, not a delegated work phase. The Request Evaluator ends after emitting the validated Controller selection; only the Controller may enter ROUTE and make downstream orchestration decisions. The grouped Lean phases reduce handoff/polling overhead; they do not remove the detailed lifecycle below. Tracking, queue, gateway, Git, approval and validation rules remain authoritative. `scripts/agent_workflow.py` may validate intake/startup, deterministically route, evaluate temporary escalation, validate packets/handoffs, fingerprint evidence, reconcile events and finalize a claimed item, but `agent_queue_core.QueueStore` remains the ownership source of truth.
+Intake/startup pair is bootstrap, not delegated work phase. Request Evaluator ends after emitting validated Controller selection; only Controller enters ROUTE and makes downstream orchestration decisions. Grouped Lean phases reduce handoff/polling overhead but do not remove detailed lifecycle below. Tracking, queue, gateway, Git, approval, validation rules remain authoritative. `scripts/agent_workflow.py` may validate intake/startup, deterministically route, evaluate escalation, validate packets/handoffs, fingerprint evidence, reconcile events, finalize claimed items; `agent_queue_core.QueueStore` remains ownership source of truth.
 
 ## Lean helper discipline
 
 See the [Lean runtime guide](../../docs/runtime/lean-agent-workflow.md) for CLI contracts, failure recovery and rollback.
 
-- Before ROUTE, use the fixed intake/startup gates when launching a new Controller. The intake evaluator may choose only `controllerLevel` + reason; it must not choose workers, Planner/Reviewer roles, parallelism, queue actions, or execution steps.
-- Pass the validated `controllerLevel` into ROUTE. ROUTE echoes that Controller level and may choose only downstream topology; it never reconfigures the Controller.
-- Use deterministic route/packet validation when work is being delegated; do not spend a Planner turn reproducing a decision table the tool can resolve.
-- Use the route's provider-agnostic effort policy; provider/model mapping is configuration and never queue authority.
-- A context budget is an economy limit, never an authorization boundary. Expand it only when evidence shows missing context and keep the expansion bounded.
-- Classify a failure before retrying. Environment, tooling, and authority failures do not justify a more expensive model.
-- Capture an evidence fingerprint after the validations that justify completion. Any changed HEAD/staged/unstaged/untracked/toolchain input makes that evidence `STALE`.
+- Before ROUTE, use fixed intake/startup gates when launching new Controller. Intake evaluator may choose only `controllerLevel` + reason; must not choose workers, Planner/Reviewer roles, parallelism, queue actions, execution steps.
+- Pass validated `controllerLevel` into ROUTE. ROUTE echoes that level and may choose only downstream topology; never reconfigures Controller.
+- Use deterministic route/packet validation for delegated work; do not spend Planner turn reproducing decision table tool can resolve.
+- Use route's provider-agnostic effort policy; provider/model mapping is configuration, never queue authority.
+- Context budget is economy limit, never authorization boundary. Expand only when evidence shows missing context; keep bounded.
+- Classify failure before retrying. Environment, tooling, authority failures do not justify more expensive model.
+- Capture evidence fingerprint after validations justify completion. Any changed HEAD/staged/unstaged/untracked/toolchain input makes evidence `STALE`.
 - Prefer `events` snapshot/delta on reconnect or meaningful queue events over repeated LLM status polling. Lease heartbeat remains authoritative for liveness.
-- For tracked work, Lean `finalize` may complete the already-owned queue item once and record reconciliation state. Tracker/requirement prose is still synchronized by exact Controller-owned edits, then `resume-finalize --ack-sync` verifies the declared markers.
-- The legacy `agent_queue.py` path remains valid and is the rollback path; Lean tooling never grants commit, push, release or deployment authority.
+- For tracked work, Lean `finalize` may complete already-owned queue item once and record reconciliation state. Tracker/requirement prose synchronized by exact Controller-owned edits, then `resume-finalize --ack-sync` verifies declared markers.
+- Legacy `agent_queue.py` path remains valid and is rollback path; Lean tooling never grants commit, push, release, deployment authority.
 
 ## CLASSIFY
 
-CLASSIFY is Controller-owned. Intake selection has already ended before this point; the Request Evaluator must not pre-classify the work or pre-select downstream roles.
+CLASSIFY is Controller-owned. Intake selection ended before this point; Request Evaluator must not pre-classify work or pre-select downstream roles.
 
 | Class | Criteria | Route |
 |---|---|---|
@@ -44,7 +44,7 @@ CLASSIFY is Controller-owned. Intake selection has already ended before this poi
 | Medium | Multiple material steps or one meaningful contract/runtime behavior change | Track, plan only if needed, queue, claim, execute, risk-based review |
 | Large | Cross-area, architecture, security, approval model, data migration, release, or broad refactor; or a real multi-item workset | Controller + Planner only when needed + adaptive parallel Workers + risk-based review |
 
-Treat uncertain work as Medium. A single-file change is not Small when it affects workspace isolation, permissions, approval, tool schemas, process execution, destructive actions, or public compatibility.
+Treat uncertain work as Medium. Single-file change is not Small when it affects workspace isolation, permissions, approval, tool schemas, process execution, destructive actions, or public compatibility.
 
 ## LOCATE: lazy context loading
 
@@ -74,17 +74,17 @@ Reviewer
   Applicable risk/gate rules
 ```
 
-A role may load one additional document when evidence shows it is needed; it must not respond by reading the entire policy or repository tree. If that expansion is insufficient, record the missing-context reason before loading another bounded slice.
+Role may load one additional document when evidence shows it is needed; must not respond by reading entire policy or repository tree. If expansion is insufficient, record missing-context reason before loading another bounded slice.
 
 ## DECIDE
 
 The Controller owns the decision delta.
 
-- Reuse decisions already recorded in accepted requirements, ADRs, trackers, or root rules.
-- Resolve architecture, security, approval, compatibility, destructive-operation, and data-ownership ambiguity before queueing dependent work.
-- Record assumptions only when they are reversible and low risk.
-- A Worker encountering a new material conflict stops only the affected item, records `BLOCKED`, and escalates a concise decision request. It does not silently redesign the system.
-- Never spend a Planner turn only to restate a deterministic route or already accepted decision.
+- Reuse decisions already recorded in requirements, ADRs, trackers, root rules.
+- Resolve architecture, security, approval, compatibility, destructive-operation, data-ownership ambiguity before queueing dependent work.
+- Record assumptions only when reversible and low risk.
+- Worker encountering material conflict stops only affected item, records `BLOCKED`, escalates concise decision request. Does not silently redesign system.
+- Never spend Planner turn only to restate deterministic route or already accepted decision.
 
 ## PLAN: Work Packet
 
@@ -98,7 +98,7 @@ OBJECTIVE           One verifiable outcome
 DEPENDENCIES        Queue IDs that must be DONE first
 DECISIONS           Accepted decisions by reference
 ACCEPTANCE CRITERIA Testable AC identifiers
-REQUIRED CAPABILITY Worker capabilities needed
+REQUIRED CAPABILITY Worker skill tags (e.g. `typescript`, `docs`) - not the model capability-vector axes in agent-topology.md's Capability Model, a distinct concept
 EXCLUSIVE SCOPES    Opaque conflict keys
 RELEVANT RULES      Only rules required for this item
 PRIMARY FILES       Expected edit surface
@@ -108,30 +108,30 @@ CONTEXT BUDGET      bounded files/bytes/tool calls
 HANDOFF             compact result + artifact refs when detail is needed
 ```
 
-Do not put provider/model names into queue history. The route selects logical effort (`light|standard|high|max`); runtime/provider configuration maps that effort to an actual model.
+Do not put provider/model names in queue history. Route selects logical effort (`light|standard|high|max`); runtime/provider configuration maps that to actual model.
 
-Do not create a queue item that still requires broad discovery, architecture design, or an unresolved decision. Route that work to the Planner or Controller first.
+Do not create queue item that still requires broad discovery, architecture design, or unresolved decision. Route that to Planner or Controller first.
 
 ## QUEUE
 
 The Controller converts dependency-safe tracker tasks into `.agents/queue/items/QNNNN.json`.
 
 - Queue IDs are repository-local and stable.
-- Dependencies form a directed acyclic graph.
-- Priority chooses among ready items but never overrides dependencies, capabilities, or exclusive scopes.
-- Use coarse explicit conflict keys such as `contract:tool-schema`, `runtime:process-policy`, or `file:scripts/agent_queue.py`.
-- Do not queue two items that intentionally edit the same coherent change unless one depends on the other.
-- Do not materialize six Workers because six items exist. Use the adaptive recommendation: normally 1/2/3/4 Workers, with 5-6 reserved for explicit burst mode. Clamp dispatch to actual available runtime slots, including other active roles; the recommendation never creates capacity.
+- Dependencies form directed acyclic graph.
+- Priority chooses among ready items but never overrides dependencies, capabilities, exclusive scopes.
+- Use coarse explicit conflict keys: `contract:tool-schema`, `runtime:process-policy`, `file:scripts/agent_queue.py`.
+- Do not queue two items that intentionally edit same coherent change unless one depends on other.
+- Do not spawn six Workers for six items. Use adaptive recommendation: normally 1/2/3/4 Workers, 5-6 reserved for explicit burst. Clamp dispatch to actual available runtime slots including other active roles; recommendation never creates capacity.
 
 ## CLAIM
 
 A Worker must claim before editing. Claim operations are atomic and lease based.
 
 - One active item per Worker by default.
-- The claim token proves ownership.
-- Heartbeat before the lease expires and before/after long-running execution.
+- Claim token proves ownership.
+- Heartbeat before lease expires and before/after long-running execution.
 - Release when handing back uncompleted work.
-- Block when an external decision/dependency prevents progress.
+- Block when external decision/dependency prevents progress.
 - Complete only after required validation evidence exists.
 - Never manually delete or edit runtime claim files.
 
@@ -139,21 +139,21 @@ See [queue claim](queue-claim.md).
 
 ## DISPATCH GATE
 
-Before the assignment tool call, give the user the task/role, concrete requested model and effort, and a task-specific reason for each selection as required by [the assignment rationale](agent-topology.md#required-user-visible-assignment-rationale). This applies to every assignment, including follow-ups with unchanged settings. Record the rationale in session-local dispatch evidence.
+Before assignment tool call, give user task/role, concrete requested model/effort, task-specific reason for each selection as required by [assignment rationale](agent-topology.md#required-user-visible-assignment-rationale). Applies to every assignment including follow-ups with unchanged settings. Record rationale in session-local dispatch evidence.
 
-Before every spawn or follow-up, including correction, reassignment, escalation and resume, freshly read [agent topology](agent-topology.md) in full and the selected role file. Run `prepare-dispatch`, read its sources, then `validate-dispatch` with the exact intended tool parameters. This is required and overrides cached-context/read-once advice. Unknown capability, stale receipt, unavailable model/effort, or mismatched existing agent means no dispatch. Prompt-only role labels do not configure a runtime. See topology for provider mapping, follow-up reuse and stop/resume rules.
+Before every spawn or follow-up (including correction, reassignment, escalation, resume), read [agent topology](agent-topology.md) in full and selected role file, then resolve role's required capability vector against [agent-models.json](../runtime/agent-models.json) (agent-topology.md's Capability Model and Mandatory fresh-read dispatch gate sections). No `prepare-dispatch`/`validate-dispatch` CLI — manual reread-and-resolve, optionally cross-checked with `python3 scripts/agent_workflow.py route`. Required, overrides cached-context/read-once advice. Unknown capability, stale resolution, unavailable model/effort, mismatched existing agent means no dispatch. Prompt-only role labels do not configure runtime. See topology for provider mapping, follow-up reuse, stop/resume rules.
 
 ## EXECUTE
 
-- Work only inside the claimed scope.
+- Work only inside claimed scope.
 - Preserve unrelated user changes.
-- Implement the smallest dependency-safe slice.
-- Start at the route's baseline effort; do not preemptively select max effort.
-- Apply topology's economical model selection before dispatch: mechanical work uses the simple tier, ordinary implementation/review the standard tier, and high requires a concrete planning/specialist/escalation trigger. Lower reasoning on the strongest model does not satisfy economical model selection. Name the accountable owner, resolve the tier in runtime configuration and fail closed if unavailable. No role defaults to a frontier model; a stronger-model request separately requires evidence of a failed same-assignment attempt at the baseline ceiling. Minimize total context and delegation overhead.
+- Implement smallest dependency-safe slice.
+- Start at route's baseline effort; do not select max preemptively.
+- Apply topology's economical model selection before dispatch: mechanical work uses simple tier, ordinary implementation/review uses standard tier, high requires concrete planning/specialist/escalation trigger. Lower reasoning on strongest model does not satisfy economical selection. Name accountable owner, resolve tier in runtime configuration, fail closed if unavailable. No role defaults to frontier model; stronger-model request separately requires evidence of failed same-assignment attempt at baseline ceiling. Minimize total context and delegation overhead.
 - Do not broaden scope merely because adjacent cleanup is convenient.
-- Do not recursively delegate/subagent unless a separate independent work item is queue-ready and ownership-safe.
-- When a needed change falls outside the Work Packet, stop that portion and ask the Controller to amend or create a queue item.
-- Keep the heartbeat current during long work.
+- Do not recursively delegate/subagent unless separate independent work item is queue-ready and ownership-safe.
+- When needed change falls outside Work Packet, stop that portion and ask Controller to amend or create queue item.
+- Keep heartbeat current during long work.
 
 ## RECOVER: classify before retry
 
@@ -188,10 +188,10 @@ validation failure + fixed decisions + failure class + do-not-touch
 
 Use a validation waterfall:
 
-1. Worker runs only focused tests/checks required by its item plus checks triggered by the actual diff.
+1. Worker runs only focused tests/checks required by item plus checks triggered by actual diff.
 2. Integration checkpoint runs combined targeted checks.
-3. Run the full suite/build once when the combined workset warrants it.
-4. Rerun required full-suite/build checks when subsequent code or other relevant input changes invalidate their evidence; also repeat for observed flakiness/nondeterminism or explicit release-certification policy. Do not repeat unchanged green checks without a reason.
+3. Run full suite/build once when combined workset warrants it.
+4. Rerun required full-suite/build checks when subsequent code or relevant input changes invalidate evidence; also repeat for observed flakiness/nondeterminism or explicit release-certification. Do not repeat unchanged green checks without reason.
 
 Review mode is risk based:
 
@@ -210,26 +210,26 @@ Synchronize in this order:
 queue item -> owning tracker task -> tracker status/snapshot -> requirement/index
 ```
 
-After completion, blocked state, scope change, or material validation result, update the durable records immediately. Do not defer synchronization to the end of the session.
+After completion, blocked state, scope change, or material validation result, update durable records immediately. Do not defer to end of session.
 
 ## PUBLISH/CLOSE
 
-Commit, push, merge, release, deployment, and external publication require explicit authority. Without it, finish at the truthful local state, commonly `REVIEW`.
+Commit, push, merge, release, deployment, external publication require explicit authority. Without it, finish at truthful local state, commonly `REVIEW`.
 
-Close only when all in-scope queue items are terminal, acceptance criteria have evidence, review has no unresolved blocker, and requested publication is complete.
+Close only when all in-scope queue items terminal, AC have evidence, review has no unresolved blocker, requested publication complete.
 
 ## Forbidden
 
-- Reading every rule, skill, tracker, or source file by default.
-- Delegating a conversation transcript instead of a Work Packet or escalation capsule.
+- Reading every rule, skill, tracker, source file by default.
+- Delegating conversation transcript instead of Work Packet or escalation capsule.
 - Preemptively using max effort for routine work.
 - Escalating model effort for environment/tool/authority failures.
-- Keeping an escalated model as the new baseline after one item succeeds.
+- Keeping escalated model as new baseline after one item succeeds.
 - Spawning recursive subagents without independent queue-ready work.
 - Running multiple generic review angles with overlapping questions.
 - Editing before claim acquisition.
 - Sharing or reusing another Worker's claim token.
 - Claiming multiple items to reserve future work.
-- Treating a stale claim as permission to edit without reclaiming it through the queue tool.
+- Treating stale claim as permission to edit without reclaiming via queue tool.
 - Marking `DONE` without evidence.
 - Letting queue state and tracker state disagree.

@@ -1,5 +1,5 @@
 # Evidence Artifacts
 
-Store detailed, non-secret validation evidence here when queue completion needs more detail than compact evidence entries should carry.
+Store detailed, non-secret validation evidence when queue completion needs more detail than compact evidence entries.
 
-Use stable names such as `TCKNNN-QNNNN.md`. Do not store claim tokens, credentials, raw production data, or unnecessary command transcripts.
+Use stable names like `TCKNNN-QNNNN.md`. Never store claim tokens, credentials, raw production data, or unnecessary command transcripts.

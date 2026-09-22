@@ -15,7 +15,7 @@ python3 scripts/agent_queue.py list
 python3 scripts/agent_queue.py enqueue ...
 ```
 
-Create only queue-ready Work Packets with known decisions, dependencies, capabilities, exclusive scopes, files, exclusions, ACs, and validation.
+Queue only queue-ready Work Packets with known decisions, dependencies, capabilities, exclusive scopes, files, exclusions, ACs, and validation.
 
 ## Worker path
 

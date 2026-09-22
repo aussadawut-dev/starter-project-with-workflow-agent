@@ -1,7 +1,7 @@
 # IMP - <Title>
 
 Created: YYYY-MM-DD
-Source: <user request / issue / design reference>
+Source: <user request/issue/design reference>
 Status: WAITING | IN_BREAKDOWN | IMPLEMENTED
 
 ## Outcome

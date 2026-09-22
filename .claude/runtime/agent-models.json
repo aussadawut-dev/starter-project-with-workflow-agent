@@ -1,17 +1,115 @@
 {
-  "version": "1.0.0",
-  "claude": {
-    "intakeEvaluator": {
-      "profile": "sonnet-max",
+  "schemaVersion": "2.0.0",
+  "notes": "Capability-vector registry (see .claude/rules/agent-topology.md, Capability Model). No script currently reads this file - it is Controller/Planner-consulted configuration, not a machine-enforced source of truth. Claude-only: this repo's dispatch contract does not support other providers. roleDefaults below intentionally omits `effort`: the single authoritative logical effort per role (light/standard/high/max) lives in agent-topology.md's dispatch-roles block, so it is never restated here where it could drift out of sync.",
+  "registry": [
+    {
+      "id": "claude-opus-5",
+      "provider": "anthropic",
+      "caps": { "reasoning": 9, "coding": 8, "longctx": 8, "synthesis": 8 },
+      "costWeight": 8,
+      "effortLevels": ["low", "medium", "high", "extra_high", "max"]
+    },
+    {
+      "id": "claude-sonnet-5",
+      "provider": "anthropic",
+      "caps": { "reasoning": 7, "coding": 8, "longctx": 7, "synthesis": 7 },
+      "costWeight": 4,
+      "effortLevels": ["low", "medium", "high", "extra_high", "max"]
+    },
+    {
+      "id": "claude-fable-5-1",
+      "provider": "anthropic",
+      "caps": { "reasoning": 9, "coding": 8, "longctx": 10, "synthesis": 10 },
+      "costWeight": 9,
+      "effortLevels": ["low", "medium", "high", "extra_high", "max"],
+      "notes": "longctx/synthesis specialist; not a default for any role here, use only when an item's required capability floor explicitly needs longctx or synthesis above what sonnet-5/opus-5 provide"
+    },
+    {
+      "id": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "caps": { "reasoning": 5, "coding": 6, "longctx": 4, "synthesis": 5 },
+      "costWeight": 1,
+      "effortLevels": ["low", "medium"],
+      "notes": "cheapest tier; caps are this session's project-defined judgement, not scored in the source spec"
+    },
+    {
+      "id": "claude-opus-4-6",
+      "provider": "anthropic",
+      "caps": { "reasoning": 8, "coding": 7, "longctx": 7, "synthesis": 7 },
+      "costWeight": 6,
+      "effortLevels": ["low", "medium", "high", "max"],
+      "deprecated": true
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "caps": { "reasoning": 6, "coding": 7, "longctx": 6, "synthesis": 6 },
+      "costWeight": 3,
+      "effortLevels": ["low", "medium", "high", "max"],
+      "deprecated": true
+    }
+  ],
+  "maintenanceRules": [
+    "IDs are permanent; a retired model is marked deprecated: true, never deleted or reused.",
+    "caps changes require a Decision log review (agent-topology.md), not an opinion.",
+    "An agent holding a deprecated ID mid-task finishes on it; new assignments do not use it."
+  ],
+  "roleDefaults": {
+    "requestEvaluator": {
+      "requiredCaps": { "reasoning": 5, "coding": 4, "longctx": 3, "synthesis": 3 },
       "file": ".claude/agents/request-evaluator.md",
-      "reasoningEffort": "max",
-      "output": "controller-level-only"
+      "resolved": "claude-haiku-4-5-20251001",
+      "note": "Pre-Controller bootstrap role; not in agent-topology.md's dispatch-roles block because the Controller never dispatches it (see that block's note)."
+    },
+    "controller": {
+      "requiredCaps": { "reasoning": 8, "coding": 6, "longctx": 6, "synthesis": 6 },
+      "file": null,
+      "resolved": "claude-opus-5",
+      "note": "Controller is the orchestrating session itself, not a dispatchable subagent file; this is guidance for starting a fresh session, not a live switch on an already-running one. Logical effort baseline is agent-topology.md dispatch-roles.controller.effort (light), not restated here."
+    },
+    "planner": {
+      "requiredCaps": { "reasoning": 7, "coding": 6, "longctx": 6, "synthesis": 6 },
+      "file": ".claude/agents/planner.md",
+      "resolved": "claude-sonnet-5",
+      "escalatesTo": "claude-opus-5",
+      "escalationReason": "genuine architecture/contract ambiguity that raises reasoning >= 8"
+    },
+    "worker": {
+      "requiredCaps": { "reasoning": 6, "coding": 7, "longctx": 5, "synthesis": 4 },
+      "file": ".claude/agents/worker.md",
+      "resolved": "claude-sonnet-5"
+    },
+    "simpleWorker": {
+      "requiredCaps": { "reasoning": 4, "coding": 6, "longctx": 3, "synthesis": 3 },
+      "file": ".claude/agents/simple-worker.md",
+      "resolved": "claude-haiku-4-5-20251001"
+    },
+    "leadReviewer": {
+      "requiredCaps": { "reasoning": 7, "coding": 7, "longctx": 6, "synthesis": 5 },
+      "file": ".claude/agents/lead-reviewer.md",
+      "resolved": "claude-sonnet-5",
+      "escalatesTo": "claude-opus-5",
+      "escalationReason": "LEAD_PLUS_SPECIALIST / high-risk review raises reasoning >= 9"
+    }
+  },
+  "selection": {
+    "algorithm": "candidates = non-deprecated registry entries whose caps meet every axis of the role's (or item's, if raised) requiredCaps; selected = candidates sorted by costWeight ascending, first; empty candidates -> re-scope the item, never assign an insufficient model.",
+    "effortSnap": "if the desired logical effort maps to a level in the selected model's effortLevels, use it; else use the next level above; if none above, use the highest supported level and flag effort-ceiling-reached.",
+    "effortCaveat": "No live numerical effort dial is confirmed exposed by the Agent tool in this runtime (model choice only: sonnet/opus/haiku/fable aliases). Treat effort above as logical/prompted depth within the chosen model until a runtime effort control is verified - see agent-topology.md, Concrete runtime effort."
+  },
+  "legacy": {
+    "intakeEvaluator": {
+      "profile": "haiku-low",
+      "file": ".claude/agents/request-evaluator.md",
+      "reasoningEffort": "low",
+      "output": "controller-level-only",
+      "changeNote": "was sonnet-max/max effort for a deliberately thin classification-only bootstrap role - downgraded to the cheapest model meeting its reasoning>=5 floor, consistent with 'Requester is trusted only with cheap, conservative, easily-corrected decisions'."
     },
     "controllerModelsByEffort": {
-      "light": "claude-sonnet-4-6",
-      "standard": "claude-sonnet-4-6",
-      "high": "claude-sonnet-4-6",
-      "max": "claude-sonnet-4-6"
+      "light": "claude-opus-5",
+      "standard": "claude-opus-5",
+      "high": "claude-opus-5",
+      "max": "claude-opus-5"
     },
     "reasoningEfforts": {
       "light": "low",
@@ -20,11 +118,9 @@
       "max": "max"
     },
     "modelEscalation": {
-      "model": "claude-sonnet-4-6",
-      "reasoningEfforts": {
-        "high": "high",
-        "max": "max"
-      }
+      "model": "claude-fable-5-1",
+      "reasoningEfforts": { "high": "high", "max": "max" },
+      "when": "Controller hits a genuine longctx/synthesis capability ceiling on claude-opus-5 (large multi-tracker synthesis, extensive document research), not for routine reasoning escalation"
     }
   }
 }

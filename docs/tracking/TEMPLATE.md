@@ -1,6 +1,6 @@
 # TCKNNN - <Title>
 
-Started YYYY-MM-DD from `<requirement path or source>`.
+Started YYYY-MM-DD from `<requirement path or source>`
 
 ## Requirement
 
@@ -90,6 +90,7 @@ Accepted decisions:
 Active exclusive scopes:
 Required review/gates:
 Last validation:
+Budget:
 Publication:
 ```
 

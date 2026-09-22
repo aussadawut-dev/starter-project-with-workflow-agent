@@ -1,6 +1,6 @@
 # Agent Queue
 
-The queue contains tracked, executable Work Packets. Runtime ownership uses atomic lease-based claims.
+Tracked, executable Work Packets with atomic lease-based runtime ownership.
 
 ## Layout
 
@@ -29,7 +29,7 @@ scripts/agent_queue_claims.py   claim, heartbeat, release, block and recovery
 
 ## Create an item
 
-Queue IDs are stable and repository-local. Choose the next unused `QNNNN` after inspecting `.agents/queue/items/`.
+Queue IDs are stable and repository-local. Choose next unused `QNNNN` after inspecting `.agents/queue/items/`.
 
 ```bash
 python3 scripts/agent_queue.py enqueue \
@@ -112,12 +112,12 @@ python3 scripts/agent_queue.py release \
   --reason "Worker reassigned before edits"
 ```
 
-Record a blocker:
+Record blocker:
 
 ```bash
 python3 scripts/agent_queue.py block \
   --id Q0001 \
-  --reason "Approval semantics require an ADR"
+  --reason "Approval semantics require ADR"
 ```
 
 Controller unblocks after resolution:
@@ -136,17 +136,17 @@ python3 scripts/agent_queue.py recover
 
 ## Selection order
 
-`claim-next` chooses the lowest numeric priority, then lowest queue ID, among items that:
+`claim-next` chooses lowest numeric priority, then lowest queue ID, among items that:
 
-- are `TODO`;
-- have all dependencies `DONE`;
-- match Worker capabilities;
-- do not conflict with active exclusive scopes;
-- are not already claimed.
+- are `TODO`
+- have all dependencies `DONE`
+- match Worker capabilities
+- do not conflict with active exclusive scopes
+- are not already claimed
 
 ## Scope keys
 
-Use exact opaque keys. They are compared for equality.
+Use exact opaque keys compared for equality.
 
 Good:
 
@@ -157,11 +157,11 @@ runtime:process-policy
 file:scripts/agent_queue.py
 ```
 
-Avoid one global key on every item; that removes useful parallelism.
+Avoid one global key on every item; removes useful parallelism.
 
 ## Evidence
 
-Evidence should be reproducible and bounded:
+Evidence must be reproducible and bounded:
 
 ```text
 python3 -m unittest discover -s tests -v: PASS (9 tests)
@@ -169,8 +169,8 @@ manual symlink escape scenario: PASS
 schema/runtime fixture parity: PASS
 ```
 
-Do not use "done", "checked", or "looks good" as evidence.
+Never use "done", "checked", or "looks good" as evidence.
 
 ## Example
 
-See [`examples/Q0001-example.json`](examples/Q0001-example.json). It is documentation only; do not copy it into the live item directory without assigning a real tracker and validating the scope.
+See [`examples/Q0001-example.json`](examples/Q0001-example.json). Documentation only; do not copy into live item directory without assigning real tracker and validating scope.

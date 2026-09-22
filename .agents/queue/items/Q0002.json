@@ -1,0 +1,59 @@
+{
+  "$schema": "../schema/queue-item.schema.json",
+  "acceptanceCriteria": [
+    "AC-02",
+    "AC-04"
+  ],
+  "completion": {
+    "agentId": "controller-direct",
+    "completedAt": "2026-09-22T06:30:19.576997Z",
+    "evidence": [
+      "BLK-01 fixed: removed duplicate/conflicting 'effort' key from all 6 agent-models.json roleDefaults entries; dispatch-roles block in agent-topology.md is now the sole logical-effort source (grep confirms no 'effort' key remains in agent-models.json)",
+      "NB-01 fixed: added explanatory note in agent-topology.md next to dispatch-roles block on why request-evaluator is absent, plus a matching note in agent-models.json roleDefaults.requestEvaluator",
+      "NB-02 fixed: execution-router.md PLAN template's REQUIRED CAPABILITY line now parenthetically disambiguates skill-tag capability from the model capability-vector axes",
+      "python3 scripts/validate_agent_governance.py: PASS",
+      "python3 -m unittest discover -s tests -v: 54/54 PASS",
+      "python3 scripts/agent_queue.py validate: PASS (2 items, 0 errors)"
+    ]
+  },
+  "createdAt": "2026-09-22T06:30:00.987994Z",
+  "dependencies": [
+    "Q0001"
+  ],
+  "doNotTouch": [
+    "scripts/*.py",
+    "tests/*.py"
+  ],
+  "exclusiveScopes": [
+    "docs:agent-governance"
+  ],
+  "id": "Q0002",
+  "objective": "Resolve BLK-01 (conflicting controller effort between dispatch-roles and agent-models.json roleDefaults) and NB-01/NB-02 from the Lead Reviewer pass on Q0001",
+  "primaryFiles": [
+    ".claude/runtime/agent-models.json",
+    ".claude/rules/agent-topology.md",
+    ".claude/rules/execution-router.md"
+  ],
+  "priority": 5,
+  "relevantRules": [],
+  "requiredCapabilities": [
+    "docs"
+  ],
+  "requiredValidation": [
+    "python3 scripts/validate_agent_governance.py",
+    "python3 -m unittest discover -s tests -v",
+    "python3 scripts/agent_queue.py validate"
+  ],
+  "stateHistory": [
+    {
+      "agentId": "controller-direct",
+      "at": "2026-09-22T06:30:19.576997Z",
+      "event": "completed"
+    }
+  ],
+  "status": "DONE",
+  "task": "TASK-002",
+  "title": "Fix Lead Review findings on Q0001 (effort-vocabulary contradiction + 2 clarity notes)",
+  "updatedAt": "2026-09-22T06:30:19.576997Z",
+  "workset": "TCK001"
+}

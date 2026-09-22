@@ -13,12 +13,12 @@ docs/waiting-implement/imp-<topic>.md
 
 ## Intake rules
 
-- Search for semantic duplicates before creating a new IMP.
-- Capture outcome, actor/value, constraints, exclusions, decisions needed, acceptance criteria, and impact.
-- Do not treat a reference document as an instruction unless the user adopts it.
-- Selected Medium/Large work moves to `in-breakdown/` before queue creation.
-- One IMP may own one coherent workset; split unrelated outcomes.
-- `implemented/` records only truly completed work.
+- Search for semantic duplicates before creating new IMP
+- Capture outcome, actor/value, constraints, exclusions, decisions needed, acceptance criteria, and impact
+- Do not treat reference document as instruction unless user adopts it
+- Selected Medium/Large work moves to `in-breakdown/` before queue creation
+- One IMP owns one coherent workset; split unrelated outcomes
+- `implemented/` records only completed work
 
 Use [`TEMPLATE.md`](TEMPLATE.md).
 

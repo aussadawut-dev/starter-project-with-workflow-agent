@@ -1,8 +1,8 @@
 # Complete a claim
 
-1. Confirm the item objective and every mapped acceptance criterion are satisfied.
-2. Run all required validation and any additional checks triggered by the diff.
-3. Inspect changed files and ensure no out-of-scope or secret/runtime state is included.
+1. Confirm item objective and every acceptance criterion satisfied.
+2. Run all required validation and diff-triggered checks.
+3. Inspect changed files. Ensure no out-of-scope or secret/runtime state included.
 4. Complete with concrete evidence:
 
    ```bash
@@ -13,7 +13,7 @@
      --evidence "<additional evidence>: PASS"
    ```
 
-5. Synchronize the owning tracker task, execution snapshot, and indexes immediately.
-6. Return the structured Worker handoff from `.claude/rules/agent-topology.md`.
+5. Synchronize owning tracker task, execution snapshot, indexes immediately.
+6. Return structured Worker handoff from `.claude/rules/agent-topology.md`.
 
-Do not complete merely because implementation exists; validation evidence is mandatory.
+Do not complete without validation evidence.

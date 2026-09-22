@@ -27,4 +27,4 @@ Use [the tracking rule](../../rules/tracking.md) as the authoritative policy.
 
 Use [the tracker template](../../../docs/tracking/TEMPLATE.md) and [queue claim](../queue-claim/SKILL.md).
 
-Tracking never substitutes for security, approval, contract, Git, test, or publication policy.
+Tracking does not substitute for security, approval, contract, Git, test, or publication policy.

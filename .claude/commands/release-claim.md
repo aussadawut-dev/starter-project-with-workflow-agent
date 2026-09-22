@@ -1,6 +1,6 @@
 # Release or block a claim
 
-Use when the Worker will not complete its currently owned item.
+Use when Worker will not complete its owned item.
 
 Release uncompleted, safely returnable work:
 
@@ -11,7 +11,7 @@ python3 scripts/agent_queue.py release \
   --reason "<truthful handoff reason>"
 ```
 
-Block when a decision, authority, dependency, or environment prevents progress:
+Block when decision, authority, dependency, or environment prevents progress:
 
 ```bash
 python3 scripts/agent_queue.py block \
@@ -20,4 +20,4 @@ python3 scripts/agent_queue.py block \
   --reason "<specific blocker and required action>"
 ```
 
-Before either action, preserve safe changes and record a concise handoff in the tracker. Never delete the runtime claim directory manually.
+Before either action, preserve changes and record concise handoff in tracker. Never delete runtime claim directory manually.

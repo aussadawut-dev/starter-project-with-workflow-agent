@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This workflow allows multiple coding agents to work in one repository without duplicate execution, context explosion, hidden ownership, or unsafe concurrent edits.
+Enables multiple agents to work in one repository without duplicate execution, context explosion, hidden ownership, or unsafe concurrent edits.
 
-The design separates four concerns:
+Separates four concerns:
 
 ```text
 Requirement  What must be achieved and why
@@ -17,7 +17,7 @@ No layer silently replaces another.
 
 ## End-to-end flow
 
-The canonical workflow is grouped into five Lean phases while preserving every existing queue/claim/security boundary:
+Canonical workflow grouped into five Lean phases while preserving every queue/claim/security boundary:
 
 ```text
 User request
@@ -46,37 +46,37 @@ FINALIZE = complete-once -> reconciliation -> tracker/requirement sync
 PUBLISH / CLOSE only with separate authority
 ```
 
-Detailed CLASSIFY/LOCATE/DECIDE/PLAN/QUEUE/CLAIM/SYNC semantics remain the same; the grouping removes repeated agent handoffs rather than removing controls. `scripts/agent_workflow.py` provides deterministic routing, packet/handoff validation, evidence freshness, event snapshot/delta and resumable finalize. `scripts/agent_queue.py` remains the ownership/lease source of truth and the rollback-compatible execution path.
+Detailed CLASSIFY/LOCATE/DECIDE/PLAN/QUEUE/CLAIM/SYNC semantics remain unchanged; grouping removes repeated handoffs rather than controls. `scripts/agent_workflow.py` provides deterministic routing, packet/handoff validation, evidence freshness, event snapshot/delta and resumable finalize. `scripts/agent_queue.py` remains ownership/lease source of truth and rollback-compatible execution path.
 
 ## Roles
 
 ### Controller
 
-The Controller is the sole orchestration owner. It classifies, locates, resolves decision deltas, creates the dependency graph, enqueues items, monitors ownership, integrates results, and synchronizes workset state.
+Sole orchestration owner. Classifies, locates, resolves decision deltas, creates dependency graph, enqueues items, monitors ownership, integrates results, and synchronizes workset state.
 
-It does not routinely implement or review. This prevents the highest-context agent from consuming tokens on work a bounded Worker can perform.
+Does not routinely implement or review to prevent highest-context agent from consuming tokens on work bounded Worker can perform.
 
 ### Planner
 
-The Planner is on demand. It appears only for initial Large/Complex decomposition or re-planning caused by a real dependency, architecture, or validation change.
+On-demand only. Appears for initial Large/Complex decomposition or re-planning from real dependency, architecture, or validation change.
 
-It returns queue-ready boundaries and leaves the loop.
+Returns queue-ready boundaries and exits loop.
 
 ### Lead Reviewer
 
-The Reviewer receives the accepted ACs, Work Packets, combined diff, evidence, and selected risk rules. It does not reread the whole repository by default.
+Receives accepted ACs, Work Packets, combined diff, evidence, and selected risk rules. Does not reread entire repository by default.
 
-Routine findings return to the owning Worker. Architecture, security, workspace, approval, destructive-operation, migration, and public-contract findings escalate.
+Routine findings return to owning Worker. Architecture, security, workspace, approval, destructive-operation, migration, and public-contract findings escalate.
 
 ### Worker pool
 
-The pool size equals genuinely independent ready items, normally capped at six. Each Worker claims one item and reads only its Work Packet references.
+Pool size equals genuinely independent ready items, normally capped at six. Each Worker claims one item and reads only its Work Packet references.
 
-A Worker may not claim future work merely to reserve it.
+Workers may not claim future work to reserve it.
 
 ## Context routing
 
-The system reduces token use through hierarchical routing:
+Reduces token use through hierarchical routing:
 
 ```text
 Root entry point
@@ -88,24 +88,24 @@ Root entry point
 
 Agents do not preload every rule, historical tracker, or source directory.
 
-The Controller passes references and exact boundaries instead of copying requirements, architecture prose, or conversation history into every Worker prompt. Lean Work Packets additionally carry explicit `maxBytes`, `maxFiles`, `maxToolCalls`, and `allowExpansion` context-budget metadata. These values control economy only; they never expand workspace, path, provider, process, or approval authority.
+Controller passes references and exact boundaries instead of copying requirements, architecture prose, or conversation history to each Worker. Lean Work Packets carry explicit `maxBytes`, `maxFiles`, `maxToolCalls`, and `allowExpansion` context-budget metadata. These control economy only; never expand workspace, path, provider, process, or approval authority.
 
 ## Work Packet boundary
 
-A queue item is ready only when it answers:
+Queue item ready only when it answers:
 
-- What exact outcome is required?
-- Which durable workset/task owns it?
-- Which decisions are already accepted?
-- Which dependencies must be DONE?
-- Which capabilities are required?
-- Which exclusive conflict keys apply?
-- Which files are expected?
-- Which areas are prohibited?
-- Which ACs and validations prove completion?
-- What handoff must be returned?
+- Exact outcome required?
+- Durable workset/task owner?
+- Decisions already accepted?
+- Dependencies must be DONE?
+- Required capabilities?
+- Exclusive conflict keys?
+- Expected files?
+- Prohibited areas?
+- ACs and validations proving completion?
+- Required handoff?
 
-Discovery or architecture work without these answers belongs to the Controller/Planner, not the Worker queue.
+Discovery or architecture work without these answers belongs to Controller/Planner, not Worker queue.
 
 ## Queue state model
 
@@ -145,19 +145,19 @@ docs:agent-governance
 
 ## Lease model
 
-A lease prevents abandoned ownership from blocking the queue permanently.
+Prevents abandoned ownership from blocking queue permanently.
 
-- Default: 30 minutes.
-- Heartbeat: at least every 10 minutes and around long operations.
-- Expired lease: archived and removed by recovery.
-- Lost lease: Worker stops editing and reclaims before continuing.
-- Blocked work: durable `BLOCKED`, claim released.
-- Unfinished handoff: claim released with reason.
-- Completion: evidence persisted, item `DONE`, claim archived and removed.
+- Default: 30 minutes
+- Heartbeat: every 10 minutes and around long operations
+- Expired lease: archived and removed by recovery
+- Lost lease: Worker stops and reclaims before continuing
+- Blocked work: durable `BLOCKED`, claim released
+- Unfinished handoff: claim released with reason
+- Completion: evidence persisted, item `DONE`, claim archived and removed
 
 ## Tracker synchronization
 
-Queue completion is not the end of the workflow.
+Queue completion is not end of workflow.
 
 ```text
 Q item state
@@ -166,13 +166,13 @@ Q item state
         -> requirement/index state
 ```
 
-This synchronization happens immediately after each material state change, not at session end. Lean finalize records a token-free PREPARED/reconciliation state before completing the existing queue item and checks declared tracker markers afterward. A crash after queue completion is recovered from the queue's idempotency evidence; completion is never replayed. The finalize journal is ignored coordination metadata, not another ownership source of truth.
+Synchronization happens immediately after each material state change. Lean finalize records token-free PREPARED/reconciliation state before completing existing queue item and checks declared tracker markers after. Crash after queue completion recovered from queue's idempotency evidence; completion never replayed. Finalize journal is ignored coordination metadata, not ownership source of truth.
 
 ## Publication boundary
 
-Editing, commit, push, merge, release, and deployment are distinct authorities. Queue ownership grants none of them automatically.
+Editing, commit, push, merge, release, and deployment are distinct authorities. Queue ownership grants none automatically.
 
-When implementation and review are complete but publication is not authorized, the truthful workset state is `REVIEW`.
+When implementation and review are complete but publication is not authorized, workset state is `REVIEW`.
 
 ## Operational example
 
@@ -193,8 +193,8 @@ python3 scripts/agent_queue.py complete   --id Q0007   --evidence "npm test -- s
 
 ## Design constraints
 
-- Local runtime claim state assumes coordinating agents share one workspace filesystem.
-- Claims are not distributed locks across unrelated clones or machines.
-- Git branches do not replace claims.
-- Queue JSON is human-reviewable and implementation-neutral.
-- The Python queue utility has no third-party dependency.
+- Local runtime claim state assumes coordinating agents share one workspace filesystem
+- Claims are not distributed locks across unrelated clones or machines
+- Git branches do not replace claims
+- Queue JSON is human-reviewable and implementation-neutral
+- Python queue utility has no third-party dependency

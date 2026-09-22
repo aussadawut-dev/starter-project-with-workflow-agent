@@ -1,24 +1,24 @@
 # Publish active workset
 
-Use this command only when the user or an approved runbook has explicitly authorized **push/publication**. A release tag is an additional authority and must be separately explicit.
+Use only when user or approved runbook explicitly authorizes **push/publication**. Release tag requires separate explicit authority.
 
-1. Confirm the explicit workspace/repository, current attached branch, exact HEAD, configured remotes, and working-tree status. Refuse detached HEAD.
-2. Read `.claude/rules/git-workflow.md`, the active tracker, and the commit/review evidence for the workset being published.
-3. Confirm the intended workset is represented by the exact current HEAD. Dirty unrelated changes must not be discarded and must not be described as published.
-4. Select an explicitly configured safe remote. An existing upstream may be used only as a remote-selection hint; upstream is not required.
-5. Push only the **current attached local branch to the exact same-name remote branch** through the host/gateway's bounded Git capability and exact-operation approval.
-   - Do not use arbitrary refspecs.
-   - Do not rename the remote destination.
-   - Do not set upstream implicitly.
-   - Do not force-push or rewrite history.
-6. Read back branch/HEAD/publication state and report the pushed commit and destination truthfully. If the push fails after the local commit exists, preserve and report that partial state; do not roll back or rewrite the commit.
-7. If, and only if, a release tag was separately authorized:
-   - accept only a SemVer release tag, optionally prefixed with `v`;
-   - bind the annotated tag to the exact approved HEAD;
-   - use exact-operation approval and the host/gateway's bounded release-tag capability;
-   - push only that exact tag;
-   - never overwrite, retarget, delete, or force-push an existing release tag.
-8. Record publication evidence required by the active tracker: commit, remote, branch, and release tag when applicable. If recording that evidence creates new repository changes, do not silently commit or republish them without separate commit/push authority.
-9. Reevaluate closure only after every requested publication action has succeeded and no blocking review finding remains.
+1. Confirm explicit workspace/repository, current branch, exact HEAD, configured remotes, working-tree status. Refuse detached HEAD.
+2. Read `.claude/rules/git-workflow.md`, active tracker, commit/review evidence for published workset.
+3. Confirm intended workset represented by exact current HEAD. Dirty unrelated changes must not be discarded or described as published.
+4. Select explicitly configured safe remote. Existing upstream is only a hint; not required.
+5. Push **current branch to exact same-name remote** through host/gateway's bounded capability and exact-operation approval:
+   - No arbitrary refspecs.
+   - No remote rename.
+   - No implicit upstream.
+   - No force-push or rewrite.
+6. Read back branch/HEAD/publication state. Report pushed commit and destination truthfully. If push fails after local commit, preserve and report partial state; do not roll back.
+7. Only if release tag separately authorized:
+   - Accept SemVer tag, optionally prefixed `v`;
+   - Bind annotated tag to exact approved HEAD;
+   - Use exact-operation approval and host/gateway's bounded capability;
+   - Push only exact tag;
+   - Never overwrite, retarget, delete, or force-push release tags.
+8. Record publication evidence for active tracker: commit, remote, branch, release tag. If recording creates new changes, do not silently commit/republish without separate authority.
+9. Reevaluate closure only after every requested action succeeds and no blocking review finding remains.
 
-Commit, push, release-tag, merge, and deployment permissions remain distinct throughout this command.
+Commit, push, release-tag, merge, deployment permissions remain distinct.
